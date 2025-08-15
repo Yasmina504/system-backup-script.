@@ -1,35 +1,21 @@
 #!/bin/bash
 
-# تحديد مجلد النسخ الاحتياطي
-backup_dir="/var/backups/system"
-mkdir -p "$backup_dir"
+BACKUP_DIR="$HOME/backups/system"
+mkdir -p "$BACKUP_DIR"
 
-# اسم ملف النسخة الاحتياطية
-backup_file="$backup_dir/system_backup_$(date +%Y-%m-%d_%H-%M-%S).tar.gz"
+BACKUP_FILE="$BACKUP_DIR/system_backup_$(date +%Y-%m-%d_%H-%M-%S).tar.gz"
 
-# App Password اللي عملتيه
-APP_PASSWORD="mwcc tybn njah gdqb "
+EMAIL="yasminaabdelkarim32@gmail.com"
+APP_PASSWORD_FILE="$HOME/backup_script/backup_app_password"
+APP_PASSWORD=$(cat "$APP_PASSWORD_FILE")
 
-# تنفيذ النسخ الاحتياطي والتحقق من النجاح
-if tar -czf "$backup_file" /etc; then
-    echo "Backup created: $backup_file"
-    # إرسال إيميل النجاح باستخدام s-nail و App Password
-    echo "Backup completed successfully at $(date)" | s-nail -S smtp="smtp.gmail.com:587" \
-        -S smtp-use-starttls \
-        -S smtp-auth=login \
-        -S smtp-auth-user="yasminaabdelkarim32@gmail.com" \
-        -S smtp-auth-password="$APP_PASSWORD" \
-        -S ssl-verify=ignore \
-        -s "System Backup Report" yasminaabdelkarim32@gmail.com
+sudo tar -czf "$BACKUP_FILE" /etc
+
+if [ $? -eq 0 ]; then
+    echo "Backup successful: $BACKUP_FILE"
+    echo -e "Subject: Backup Completed\n\nBackup completed successfully at $(date)" | msmtp --from="$EMAIL" "$EMAIL"
 else
     echo "Backup FAILED at $(date)"
-    # إرسال إيميل الفشل
-    echo "Backup FAILED at $(date)" | s-nail -S smtp="smtp.gmail.com:587" \
-        -S smtp-use-starttls \
-        -S smtp-auth=login \
-        -S smtp-auth-user="yasminaabdelkarim32@gmail.com" \
-        -S smtp-auth-password="$APP_PASSWORD" \
-        -S ssl-verify=ignore \
-        -s "ALERT: Backup Failed" yasminaabdelkarim32@gmail.com
+    echo -e "Subject: ALERT: Backup Failed\n\nBackup FAILED at $(date)" | msmtp --from="$EMAIL" "$EMAIL"
 fi
 
